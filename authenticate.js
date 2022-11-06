@@ -1,10 +1,19 @@
 const passport = require('passport');
+////////// NOTE: From the lessons, you are missing importing the local passport strategy.
+const LocalStrategy = require('passport-local').Strategy;
+////////// END NOTE
 const User = require('./models/user');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
-const config = require('./config.js');
+const config = require('./config');
+
+////////// NOTE: Looks like you are missing to local passport strategy code as well...
+exports.local = passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+////////// END NOTE
 
 exports.getToken = function(user) {
     return jwt.sign(user, config.secretKey, {expiresIn: 3600});
@@ -33,3 +42,16 @@ exports.jwtPassport = passport.use(
 );
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+exports.verifyAdmin = (req, res, next) => {
+    if(req.user.admin){
+        return next()
+    }else{
+////////// NOTE: Make sure to declare your variables with "let" or "const"
+// OLD CODE:        err = new Error(`You are not authorized to perform this operation!`);
+            const err = new Error(`You are not authorized to perform this operation!`);
+////////// END NOTE
+            err.status = 403;
+            return next(err);
+    }
+}
